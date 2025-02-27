@@ -32,7 +32,13 @@ st.write(
 
 # Pastikan file tersedia
 file_path = "main_data.csv"
-if load_data(file_path):
+
+# Fungsi untuk memuat data
+@st.cache_data
+def load_data():
+    return pd.read_csv(file_path)
+    
+if os.path.exists(file_path):
     # Load data
     df = pd.read_csv(file_path)
     st.header("Data Preview")
