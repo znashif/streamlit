@@ -32,7 +32,7 @@ st.write(
 
 # Pastikan file tersedia
 file_path = "main_data.csv"
-if os.path.exists(file_path):
+if load_data(file_path):
     # Load data
     df = pd.read_csv(file_path)
     st.header("Data Preview")
