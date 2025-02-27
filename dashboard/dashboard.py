@@ -31,7 +31,7 @@ st.write(
 
 
 # Pastikan file tersedia
-file_path = os.path.join(os.path.dirname(__file__), "dashboard", "main_data.csv")
+file_path = os.path.join(os.path.dirname(__file__), "main_data.csv")
 
 # Fungsi untuk memuat data
 @st.cache_data
