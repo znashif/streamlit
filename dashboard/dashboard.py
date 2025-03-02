@@ -14,10 +14,7 @@ st.write(
     - Year, Month, Day, Hour
     - PM2.5 : Partikel udara halus ≤ 2.5 µm, berbahaya bagi kesehatan.
     - PM10 : Partikel udara ≤ 10 µm, dapat menyebabkan iritasi pernapasan.
-    - SO2 : Gas dari pembakaran fosil, menyebabkan iritasi dan hujan asam.
-    - NO2 : Gas dari kendaraan & industri, berbahaya bagi paru-paru.
-    - CO : Gas beracun dari pembakaran tidak sempurna, dapat menyebabkan keracunan.
-    - O3 : Ozon di permukaan tanah, polutan yang menyebabkan masalah pernapasan.
+    - SO2, NO2, CO, O3 : Gas polutan udara.
     - TEMP : Suhu udara dalam derajat Celsius.
     - PRES : Tekanan udara dalam hPa.
     - DEWP : Titik embun, suhu di mana udara mulai mengembun.
@@ -27,63 +24,55 @@ st.write(
     """
 )
 
-
-
-
 # Pastikan file tersedia
 file_path = os.path.join(os.path.dirname(__file__), "main_data.csv")
 
-# Fungsi untuk memuat data
 @st.cache_data
 def load_data():
-    return pd.read_csv(file_path)
-    
+    df = pd.read_csv(file_path)
+    df['Date'] = pd.to_datetime(df[['year', 'month', 'day']])  # Buat kolom tanggal
+    return df
+
 if os.path.exists(file_path):
     # Load data
-    df = pd.read_csv(file_path)
+    df = load_data()
+    
+    # Sidebar untuk filtering tanggal
+    min_date, max_date = df['Date'].min().date(), df['Date'].max().date()
+    start_date, end_date = st.sidebar.date_input(
+        "Pilih Rentang Tanggal:", (min_date, max_date), min_value=min_date, max_value=max_date
+    )
+    
+    # Filter data berdasarkan rentang tanggal yang dipilih
+    df_filtered = df[(df['Date'] >= pd.Timestamp(start_date)) & (df['Date'] <= pd.Timestamp(end_date))]
+    
     st.header("Data Preview")
-    st.write(df.head())
+    st.write(df_filtered.head())
 
     st.header("Visualisasi Data")
-    st.subheader("Pertanyaan 1 : Apakah kecepatan angin (WSPM) berpengaruh terhadap penyebaran polusi udara?")
-    # Pastikan kolom yang dibutuhkan ada
-    if 'WSPM' in df.columns and 'PM2.5' in df.columns:
-        # Menampilkan scatter plot
+    st.subheader("Pertanyaan 1: Apakah kecepatan angin (WSPM) berpengaruh terhadap penyebaran polusi udara?")
+    if 'WSPM' in df_filtered.columns and 'PM2.5' in df_filtered.columns:
         st.write("📈 Scatter Plot: Kecepatan Angin vs Polusi Udara")
         fig, ax = plt.subplots(figsize=(10, 6))
-        sns.scatterplot(data=df, x='WSPM', y='PM2.5', alpha=0.5)
+        sns.scatterplot(data=df_filtered, x='WSPM', y='PM2.5', alpha=0.5)
         ax.set_title('Hubungan antara Kecepatan Angin (WSPM) dan Polusi Udara (PM2.5)')
         ax.set_xlabel('Kecepatan Angin (m/s)')
         ax.set_ylabel('Konsentrasi PM2.5')
-
-        # Menampilkan plot di Streamlit
         st.pyplot(fig)
     else:
         st.error("⚠️ Kolom 'WSPM' atau 'PM2.5' tidak ditemukan dalam dataset.")
 
-    st.write("""
-            - Berdasarkan scatter plot yang menunjukkan hubungan antara kecepatan angin (WSPM) dan konsentrasi PM2.5, terlihat bahwa kecepatan angin berpengaruh signifikan terhadap penyebaran polusi udara.
-            - Pada kecepatan angin rendah, konsentrasi PM2.5 cenderung tinggi karena polutan mengendap dan tidak tersebar dengan baik.
-            - Pada kecepatan angin tinggi, konsentrasi PM2.5 menurun, menunjukkan bahwa angin membantu menyebarkan dan mendispersikan polusi udara. Dengan demikian, kecepatan angin berperan dalam mengurangi konsentrasi polutan di udara, terutama dalam kondisi atmosfer terbuka.
-             """)
-
-
-    st.subheader("Pertanyaan 2 : Bagaimana Hubungan antara Suhu Udara (TEMP) dan Konsentrasi Ozon (O3)?")
-    # Scatter Plot dengan Regresi: Suhu Udara vs Konsentrasi Ozon (O3)
-    if 'TEMP' in df.columns and 'O3' in df.columns:
+    st.subheader("Pertanyaan 2: Bagaimana Hubungan antara Suhu Udara (TEMP) dan Konsentrasi Ozon (O3)?")
+    if 'TEMP' in df_filtered.columns and 'O3' in df_filtered.columns:
         st.write("📉 Scatter Plot dengan Regresi: Suhu Udara vs Konsentrasi Ozon")
         fig2, ax2 = plt.subplots(figsize=(10, 6))
-        sns.regplot(data=df, x="TEMP", y="O3", scatter_kws={"alpha": 0.5}, line_kws={"color": "red"})
+        sns.regplot(data=df_filtered, x="TEMP", y="O3", scatter_kws={"alpha": 0.5}, line_kws={"color": "red"})
         ax2.set_xlabel("Suhu Udara (°C)")
         ax2.set_ylabel("Konsentrasi Ozon (µg/m³)")
         ax2.set_title("Hubungan antara Suhu Udara (TEMP) dan Konsentrasi Ozon (O3)")
         ax2.grid(True)
         st.pyplot(fig2)
-
-    st.write("""
-            - Suhu udara (TEMP) memiliki korelasi positif dengan konsentrasi Ozon (O3).
-            - Pada suhu yang lebih tinggi, reaksi fotokimia yang menghasilkan Ozon cenderung meningkat, sehingga konsentrasi O3 juga lebih tinggi.
-            - Jika data menunjukkan tren ini dalam grafik, maka dapat disimpulkan bahwa suhu udara yang lebih tinggi mendorong pembentukan O3 lebih banyak di atmosfer.
-             """)
+    else:
+        st.error("⚠️ Kolom 'TEMP' atau 'O3' tidak ditemukan dalam dataset.")
 else:
     st.error(f"⚠️ File `{file_path}` tidak ditemukan. Pastikan file ada di folder yang sama.")
